@@ -3,7 +3,7 @@ const cors = require("cors");
 require("dotenv").config();
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
@@ -14,47 +14,88 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@clu
 
 // Create client
 const client = new MongoClient(uri, {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  },
+    serverApi: {
+        version: ServerApiVersion.v1,
+        strict: true,
+        deprecationErrors: true,
+    },
 });
 
 let jewelleryCollection;
 
 async function run() {
-  try {
-    await client.connect();
+    try {
+        await client.connect();
 
-    const db = client.db("jewelleryDB"); // DB name
-    jewelleryCollection = db.collection("jewelleries"); // Collection name
+        const db = client.db("JewelleryDB");
+        jewelleryCollection = db.collection("jewelleries");
 
-    console.log("✅ Connected to MongoDB");
+        console.log("Connected to MongoDB");
 
-    // ✅ GET all jewelleries
-    app.get("/jewelleries", async (req, res) => {
-      try {
-        const result = await jewelleryCollection.find().toArray();
-        res.send(result);
-      } catch (error) {
-        console.error("❌ Error fetching data:", error);
-        res.status(500).send({ message: "Failed to fetch jewelleries" });
-      }
-    });
+        // GET all jewelleries
+        app.get("/jewelleries", async (req, res) => {
+            try {
+                const result = await jewelleryCollection.find().toArray();
+                res.send(result);
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                res.status(500).send({ message: "Failed to fetch jewelleries" });
+            }
+        });
 
-  } catch (error) {
-    console.error("❌ MongoDB connection error:", error);
-  }
+        // GET jewellery by ID
+        const { ObjectId } = require("mongodb");
+
+        app.get("/jewelleries/:id", async (req, res) => {
+            try {
+                const id = req.params.id;
+
+                const jewellery = await jewelleryCollection.findOne({
+                    _id: new ObjectId(id),
+                });
+
+                if (!jewellery) {
+                    return res.status(404).send({ message: "Jewellery not found" });
+                }
+
+                res.send(jewellery);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ message: "Invalid ID" });
+            }
+        });
+
+        // POST a new jewellery
+        app.post("/jewelleries", async (req, res) => {
+            try {
+                const newJewellery = req.body;
+
+                // Check if ID already exists
+                const exists = await jewelleryCollection.findOne({ id: newJewellery.id });
+                if (exists) {
+                    return res.status(400).send({ message: "Jewellery with this ID already exists" });
+                }
+
+                const result = await jewelleryCollection.insertOne(newJewellery);
+                res.status(201).send(result);
+            } catch (error) {
+                console.error("Error adding jewellery:", error);
+                res.status(500).send({ message: "Failed to add jewellery" });
+            }
+        });
+
+    } catch (error) {
+        console.error("MongoDB connection error:", error);
+    }
 }
 
-run(); 
+run();
 
 // Root route
 app.get("/", (req, res) => {
-  res.send("Jewellery Server Running 💎");
+    res.send("Jewellery Server Running 💎");
 });
 
 app.listen(port, () => {
-  console.log(`🚀 Server is running on port ${port}`);
+    console.log(`🚀 Server is running on port ${port}`);
 });
