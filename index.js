@@ -29,6 +29,7 @@ async function run() {
 
         const db = client.db("JewelleryDB");
         jewelleryCollection = db.collection("jewelleries");
+        weddingCollection = db.collection("wedding");
 
         console.log("Connected to MongoDB");
 
@@ -70,7 +71,7 @@ async function run() {
             try {
                 const newJewellery = req.body;
 
-                // Check if ID already exists
+
                 const exists = await jewelleryCollection.findOne({ id: newJewellery.id });
                 if (exists) {
                     return res.status(400).send({ message: "Jewellery with this ID already exists" });
@@ -84,6 +85,42 @@ async function run() {
             }
         });
 
+
+        // get wedding collection
+        app.get("/wedding", async (req, res) => {
+            try {
+                const data = await weddingCollection.find().toArray();
+                res.send(data);
+            } catch (error) {
+                res.status(500).send({ error: "Failed to fetch data" });
+            }
+        });
+
+
+
+        
+        // post wedding collection
+
+        app.post("/wedding", async (req, res) => {
+            try {
+                const newItem = req.body;
+
+                const result = await weddingCollection.insertOne(newItem);
+
+                res.send({
+                    message: "Data inserted successfully",
+                    insertedId: result.insertedId,
+                });
+            } catch (error) {
+                res.status(500).send({ error: "Failed to insert data" });
+            }
+        });
+
+
+
+
+
+
     } catch (error) {
         console.error("MongoDB connection error:", error);
     }
@@ -93,9 +130,9 @@ run();
 
 // Root route
 app.get("/", (req, res) => {
-    res.send("Jewellery Server Running 💎");
+    res.send("Jewellery Server Running");
 });
 
 app.listen(port, () => {
-    console.log(`🚀 Server is running on port ${port}`);
+    console.log(`Server is running on port ${port}`);
 });
