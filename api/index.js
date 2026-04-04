@@ -17,7 +17,7 @@ app.use(cors({
 
 app.options('*', cors());
 
-// 2. Optimized MongoDB Connection for Serverless
+
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.fh8zolv.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 const client = new MongoClient(uri, {
